@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeMirror Fountain Demo</title>
+    <style>
+      body {
+        margin: 0;
+        /* padding: 20px; */
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      main {
+        padding: 20px;
+      }
+      h1 {
+        padding-left: 20px;
+        font-size: 2.5rem;
+        font-weight: 800;
+        letter-spacing: -1px;
+        color: #2563eb;
+        background: linear-gradient(90deg, #4f8cff 0%, #2563eb 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 0.5em;
+        text-align: center;
+        text-shadow: 0 2px 8px rgba(79, 140, 255, 0.08);
+      }
+
+      .editor {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        height: 80vh;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .cm-editor {
+        height: 100%;
+      }
+
+      .cm-scroller {
+        overflow: auto;
+      }
+
+      /* Syntax highlighting styles */
+      .cm-strong {
+        font-weight: bold;
+      }
+
+      .cm-emphasis {
+        font-style: italic;
+      }
+
+      /* Combined bold and italic */
+      .cm-strong-emphasis {
+        font-weight: bold;
+        font-style: italic;
+      }
+
+      /* Underline using link tag */
+      .cm-link {
+        text-decoration: underline;
+        color: inherit;
+      }
+
+      .cm-keyword {
+        color: #708;
+      }
+
+      .cm-heading {
+        font-weight: bold;
+        color: #219;
+      }
+
+      .cm-typeName {
+        color: #085;
+      }
+
+      .cm-variableName {
+        color: #219;
+      }
+
+      .cm-comment {
+        color: #940;
+      }
+
+      .cm-string {
+        color: #a11;
+      }
+
+      #export-fountain {
+        background: #4f8cff;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        padding: 10px 24px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(79, 140, 255, 0.08);
+        transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+          color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+          transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+          box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #export-fountain:hover,
+      #export-fountain:focus {
+        background: #2563eb;
+        color: #e0e7ff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Fountain Highlighting Demo</h1>
+    <main>
+      <button id="export-fountain" style="margin-bottom: 16px">
+        Export Fountain
+      </button>
+      <div
+        id="editor"
+        class="editor"
+        role="textbox"
+        aria-label="Fountain screenplay editor"
+      ></div>
+    </main>
+
+    <script type="module">
+      import { EditorView, keymap } from "@codemirror/view";
+      import {
+        defaultKeymap,
+        history,
+        historyKeymap,
+      } from "@codemirror/commands";
+      import { fountain } from "./fountain.ts";
+      import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
+      import { lineNumbers } from "@codemirror/view";
+      import { tags } from "@lezer/highlight";
+
+      // Define custom highlight style
+      const fountainHighlightStyle = HighlightStyle.define([
+        { tag: tags.strong, class: "cm-strong" },
+        { tag: tags.emphasis, class: "cm-emphasis" },
+        { tag: tags.link, class: "cm-link" },
+        { tag: tags.keyword, class: "cm-keyword" },
+        { tag: tags.heading, class: "cm-heading" },
+        { tag: tags.typeName, class: "cm-typeName" },
+        { tag: tags.variableName, class: "cm-variableName" },
+        { tag: tags.comment, class: "cm-comment" },
+        { tag: tags.string, class: "cm-string" },
+      ]);
+
+      let editor = new EditorView({
+        doc: `Title: The Fountain Demo
+Author: Claude
+Credit: Written by
+Date: May 2024
+Source: Based on the original screenplay
+Contact: example@email.com
+Copyright: (c) 2024
+
+# Act One
+## Sequence A
+
+= This introduces our main characters in a coffee shop setting.
+
+INT. COFFEE SHOP - DAY
+
+A cozy coffee shop filled with the *aroma* of freshly brewed coffee. People work on laptops, chat, and enjoy their drinks.
+
+JOHN
+(typing)
+This is a sample screenplay in **Fountain** format.
+
+MARY
+(entering)
+Hey, how's the ***writing*** going?
+
+JOHN
+(without looking up)
+Just testing the _editor_.
+
+[[ This scene needs more action beats ]]
+
+/* This scene is still in development.
+   Need to add more character interaction. */
+
+CUT TO:
+
+EXT. COFFEE SHOP - DAY
+
+The sun shines brightly as people pass by the shop window.
+
+FADE OUT:
+
+THE END`,
+        extensions: [
+          lineNumbers(),
+          history(),
+          keymap.of([...defaultKeymap, ...historyKeymap]),
+          fountain(),
+          syntaxHighlighting(fountainHighlightStyle),
+        ],
+        parent: document.querySelector("#editor"),
+      });
+
+      // Export Fountain button logic
+      document
+        .getElementById("export-fountain")
+        ?.addEventListener("click", () => {
+          const doc = editor.state.doc.toString();
+          const blob = new Blob([doc], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "screenplay.fountain";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+    </script>
+  </body>
+</html>
