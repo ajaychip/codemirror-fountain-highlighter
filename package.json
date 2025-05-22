@@ -9,14 +9,15 @@
     "@codemirror/commands": "^6.3.0",
     "@codemirror/language": "^6.10.0",
     "@codemirror/state": "^6.4.0",
+    "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.0.0",
     "@lezer/common": "^1.2.0",
     "@lezer/highlight": "^1.2.0"
   },
   "devDependencies": {
-    "vite": "^5.0.0",
+    "autoprefixer": "^10.4.17",
     "postcss": "^8.4.35",
     "postcss-import": "^16.0.1",
-    "autoprefixer": "^10.4.17"
+    "vite": "^5.0.0"
   }
 }

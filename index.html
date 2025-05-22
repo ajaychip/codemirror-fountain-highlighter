@@ -7,86 +7,31 @@
     <style>
       body {
         margin: 0;
-        /* padding: 20px; */
-        font-family: system-ui, -apple-system, sans-serif;
+        background: #000;
+        color: #fff;
+        font-family: "Courier New", monospace;
       }
-      main {
-        padding: 20px;
-      }
+
       h1 {
-        padding-left: 20px;
-        font-size: 2.5rem;
-        font-weight: 800;
-        letter-spacing: -1px;
-        color: #2563eb;
-        background: linear-gradient(90deg, #4f8cff 0%, #2563eb 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-bottom: 0.5em;
         text-align: center;
-        text-shadow: 0 2px 8px rgba(79, 140, 255, 0.08);
+        font-size: 2.5rem;
+        color: #33ddff;
+        margin: 1rem 0;
+      }
+
+      main {
+        padding: 1rem 2rem;
       }
 
       .editor {
-        border: 1px solid #ccc;
-        border-radius: 4px;
         height: 80vh;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #333;
       }
 
       .cm-editor {
         height: 100%;
-      }
-
-      .cm-scroller {
-        overflow: auto;
-      }
-
-      /* Syntax highlighting styles */
-      .cm-strong {
-        font-weight: bold;
-      }
-
-      .cm-emphasis {
-        font-style: italic;
-      }
-
-      /* Combined bold and italic */
-      .cm-strong-emphasis {
-        font-weight: bold;
-        font-style: italic;
-      }
-
-      /* Underline using link tag */
-      .cm-link {
-        text-decoration: underline;
-        color: inherit;
-      }
-
-      .cm-keyword {
-        color: #708;
-      }
-
-      .cm-heading {
-        font-weight: bold;
-        color: #219;
-      }
-
-      .cm-typeName {
-        color: #085;
-      }
-
-      .cm-variableName {
-        color: #219;
-      }
-
-      .cm-comment {
-        color: #940;
-      }
-
-      .cm-string {
-        color: #a11;
       }
 
       #export-fountain {
@@ -98,119 +43,81 @@
         font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
-        box-shadow: 0 2px 8px rgba(79, 140, 255, 0.08);
-        transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-          color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-          transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-          box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-bottom: 1rem;
       }
 
-      #export-fountain:hover,
-      #export-fountain:focus {
+      #export-fountain:hover {
         background: #2563eb;
-        color: #e0e7ff;
       }
     </style>
   </head>
   <body>
     <h1>Fountain Highlighting Demo</h1>
     <main>
-      <button id="export-fountain" style="margin-bottom: 16px">
-        Export Fountain
-      </button>
-      <div
-        id="editor"
-        class="editor"
-        role="textbox"
-        aria-label="Fountain screenplay editor"
-      ></div>
+      <button id="export-fountain">Export Fountain</button>
+      <div id="editor" class="editor"></div>
     </main>
 
     <script type="module">
       import { EditorView, keymap } from "@codemirror/view";
+      import { EditorState } from "@codemirror/state";
       import {
         defaultKeymap,
         history,
         historyKeymap,
       } from "@codemirror/commands";
-      import { fountain } from "./fountain.ts";
-      import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
       import { lineNumbers } from "@codemirror/view";
+      import { syntaxHighlighting, HighlightStyle } from "@codemirror/language";
       import { tags } from "@lezer/highlight";
+      import { oneDark } from "@codemirror/theme-one-dark";
 
-      // Define custom highlight style
+      import { fountain } from "./fountain.ts";
+
       const fountainHighlightStyle = HighlightStyle.define([
-        { tag: tags.strong, class: "cm-strong" },
-        { tag: tags.emphasis, class: "cm-emphasis" },
-        { tag: tags.link, class: "cm-link" },
-        { tag: tags.keyword, class: "cm-keyword" },
-        { tag: tags.heading, class: "cm-heading" },
-        { tag: tags.typeName, class: "cm-typeName" },
-        { tag: tags.variableName, class: "cm-variableName" },
-        { tag: tags.comment, class: "cm-comment" },
-        { tag: tags.string, class: "cm-string" },
+        { tag: tags.heading, color: "#4fc1ff", fontWeight: "bold" }, // Scene headings (INT.)
+        { tag: tags.keyword, color: "#9e78ff" }, // Transitions
+        { tag: tags.strong, color: "#33ddff" }, // Character names
+        { tag: tags.string, color: "#ff7b00" }, // Dialogue / string
+        { tag: tags.meta, color: "#aaaaaa", fontStyle: "italic" }, // Parentheticals
+        { tag: tags.comment, color: "#6272a4" }, // Notes
       ]);
 
-      let editor = new EditorView({
-        doc: `Title: The Fountain Demo
-Author: Claude
-Credit: Written by
-Date: May 2024
-Source: Based on the original screenplay
-Contact: example@email.com
-Copyright: (c) 2024
+      const doc = `INT./EXT. BLOOM HOUSE - (PRESENT) DAY
 
-# Act One
-## Sequence A
+The front door opens to reveal Will and Josephine on the porch with their bags. REVERSE to Will's mother Sandra (53), surprised and a little annoyed.
 
-= This introduces our main characters in a coffee shop setting.
+SANDRA
+How did you get here?
 
-INT. COFFEE SHOP - DAY
+WILL
+We swam. The Atlantic, it's not that big really.`;
 
-A cozy coffee shop filled with the *aroma* of freshly brewed coffee. People work on laptops, chat, and enjoy their drinks.
+      const editorContainer = document.querySelector("#editor");
 
-JOHN
-(typing)
-This is a sample screenplay in **Fountain** format.
+      if (editorContainer) {
+        new EditorView({
+          state: EditorState.create({
+            doc,
+            extensions: [
+              lineNumbers(),
+              history(),
+              keymap.of([...defaultKeymap, ...historyKeymap]),
+              fountain(),
+              syntaxHighlighting(fountainHighlightStyle),
+              oneDark,
+            ],
+          }),
+          parent: editorContainer,
+        });
+      }
 
-MARY
-(entering)
-Hey, how's the ***writing*** going?
-
-JOHN
-(without looking up)
-Just testing the _editor_.
-
-[[ This scene needs more action beats ]]
-
-/* This scene is still in development.
-   Need to add more character interaction. */
-
-CUT TO:
-
-EXT. COFFEE SHOP - DAY
-
-The sun shines brightly as people pass by the shop window.
-
-FADE OUT:
-
-THE END`,
-        extensions: [
-          lineNumbers(),
-          history(),
-          keymap.of([...defaultKeymap, ...historyKeymap]),
-          fountain(),
-          syntaxHighlighting(fountainHighlightStyle),
-        ],
-        parent: document.querySelector("#editor"),
-      });
-
-      // Export Fountain button logic
+      // Export button
       document
         .getElementById("export-fountain")
         ?.addEventListener("click", () => {
-          const doc = editor.state.doc.toString();
-          const blob = new Blob([doc], { type: "text/plain" });
+          const text =
+            editorContainer.querySelector(".cm-content")?.innerText || "";
+          const blob = new Blob([text], { type: "text/plain" });
           const url = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = url;
